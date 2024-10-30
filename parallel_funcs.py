@@ -746,6 +746,40 @@ def createQueryPar(w, wh_log_path, num_obj, num_exec, debug=False):
 
 # COMMAND ----------
 
+def createDashboardPar(w, num_obj, num_exec, debug=False):
+    
+    '''
+    Parallelized version of createDashboard.
+
+    Arguments:
+    w -- a WorkspaceClient object
+    num_obj -- the number of queries to create
+    num_exec -- the number of parallel threads to spawn
+    '''
+
+    # create a local version of createDashboard that also accepts a second input
+    # this input is thrown away, but is used for the total # of objects to be created
+    def createDashboardLocal(_, w):
+        return createDashboard(w)
+    
+    # create a list to pass to ThreadPoolExecutor with the total # of objects
+    dummy_vec = list(range(num_obj))
+
+    # spawn the threads to run createDashboard
+    with ThreadPoolExecutor(max_workers = num_exec) as executor:
+        threads = executor.map(createDashboardLocal,
+                               dummy_vec,
+                               repeat(w))
+        
+        # wait for threads to complete before returning
+        for thread in threads:
+            if debug:
+                print(f"Created dashboard {thread}.")
+            else:
+                pass
+
+# COMMAND ----------
+
 def generate_in_batch(asset_type, batch_time, 
                       max_per_batch, obj_count, threads, 
                       base_directory="dbfs:/tmp/asset_generation"):
@@ -926,7 +960,14 @@ def generate_in_batch(asset_type, batch_time,
                         wh_log_path=warehouse_log_path,
                         debug=debug)
     elif asset_type == "dashboard":
-        print("Dashboards are not currently supported, and must be manually created.")
+        loop_until_done(createDashboardPar,
+                        w,
+                        asset_type,
+                        batch_time, 
+                        max_per_batch,
+                        obj_count,
+                        num_exec=threads,
+                        debug=debug)
     else:
         print("Invalid object type. Please enter one of the following: group, user, notebook, file, cluster, job, warehouse, query, dashboard")
         return
