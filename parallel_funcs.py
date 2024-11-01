@@ -1091,7 +1091,7 @@ def pull_existing_users(w=None, user_log_path="dbfs:/tmp/asset_generation/user_l
 
     # get the user list and write to the table
     users = w.users.list(attributes="userName",sort_by="userName")
-    user_list = [user.user_name for user in users]
+    user_list = spark.createDataFrame(pd.DataFrame([user.user_name for user in users], columns=["value"]))
     user_list.write.mode("append").format("delta").save(user_log_path)
 
 
@@ -1117,5 +1117,5 @@ def pull_existing_groups(w=None, group_log_path="dbfs:/tmp/asset_generation/grou
 
     # get the user list and write to the table
     groups = w.users.list(attributes="id",sort_by="id")
-    group_list = [group.id for group in groups]
+    group_list = spark.createDataFrame(pd.DataFrame([group.id for group in groups], columns=["value"]))
     group_list.write.mode("append").format("delta").save(group_log_path)
