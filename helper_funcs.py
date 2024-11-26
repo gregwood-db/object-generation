@@ -281,10 +281,10 @@ def updateJob(w, job_id, email):
     """
 
     # define the updated job ACL
-    acl = jobs.JobAccessControlRequest(user_name=email, permission_level=jobs.JobPermissionLevel.CAN_MANAGE)
+    acl = jobs.JobAccessControlRequest(user_name=email, permission_level=jobs.JobPermissionLevel.IS_OWNER)
 
     # update the acl
-    updated_job = w.jobs.update_permissions(job_id=job_id, access_control_list=[acl])
+    updated_job = w.jobs.set_permissions(job_id=job_id, access_control_list=[acl])
 
 # COMMAND ----------
 
